@@ -124,7 +124,7 @@ class face_detection():
         self.predictor = prepare(self.onnx_model)
         self.ort_session = ort.InferenceSession(self.onnx_path)
         self.input_name = self.ort_session.get_inputs()[0].name
-        rospy.Subscriber('/camera/rgb/image_rect_color/compressed', CompressedImage, self.compressedCallback)
+        rospy.Subscriber('/camera/rgb/image_rect_color/compressed', CompressedImage, self.compressedCallback, queue_size=1)
 
     def compressedCallback(self, image):
         encoded_data = np.fromstring(image.data, np.uint8)
