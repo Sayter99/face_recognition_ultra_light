@@ -218,7 +218,8 @@ class face_detection():
         cv2.waitKey(1)
     
     def shutdownCb(self):
-        self.sess.close()
+        # self.sess.close()
+        pass
 
     def start(self):
         rospy.spin()
