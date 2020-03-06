@@ -78,7 +78,7 @@ onnx-tf==1.5.0
 onnxruntime==1.1.2
 opencv-python==4.2.0.32
 pexpect==4.2.1
-Pillow==5.1.0
+Pillow==6.2.0
 protobuf==3.11.3
 pycairo==1.16.2
 pycrypto==2.6.1
