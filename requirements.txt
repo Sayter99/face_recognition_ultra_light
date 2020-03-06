@@ -17,7 +17,7 @@ chardet==3.0.4
 command-not-found==0.3
 controller-manager==0.17.0
 controller-manager-msgs==0.17.0
-cryptography==2.1.4
+cryptography==2.3
 cupshelpers==1.0
 cv-bridge==1.13.0
 defer==1.0.6
