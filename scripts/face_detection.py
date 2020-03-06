@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
+# @Author: fyr91
+# @Date: 2019-10-22 15:05:15
+# @Last Modified by: sayter
+# @Last Modified time: 2020-03-06 22:04:25
+import os
 import cv2
+import dlib
 import rospy
 import rospkg
+import tensorflow as tf
 import numpy as np
+import pickle
 import onnx
 import onnxruntime as ort
 from onnx_tf.backend import prepare
+from imutils import face_utils
 from sensor_msgs.msg import CompressedImage
+from astra_camera.srv import SetUVCExposure
 
 def area_of(left_top, right_bottom):
     """
@@ -124,7 +134,33 @@ class face_detection():
         self.predictor = prepare(self.onnx_model)
         self.ort_session = ort.InferenceSession(self.onnx_path)
         self.input_name = self.ort_session.get_inputs()[0].name
+
+        self.shape_predictor = dlib.shape_predictor(pkg_path + '/faces/models/facial_landmarks/shape_predictor_5_face_landmarks.dat')
+        self.fa = face_utils.facealigner.FaceAligner(self.shape_predictor, desiredFaceWidth=112, desiredLeftEye=(0.3, 0.3))
+        self.threshold = 0.63
+        # load distance
+        with open(pkg_path + "/faces/embeddings/embeddings.pkl", "rb") as f:
+            (self.saved_embeds, self.names) = pickle.load(f)
+
+        tf.reset_default_graph()
+        self.sess = tf.Session()
+        self.saver = tf.train.import_meta_graph(pkg_path + '/faces/models/mfn/m1/mfn.ckpt.meta')
+        self.saver.restore(self.sess, pkg_path + '/faces/models/mfn/m1/mfn.ckpt')
+
+        self.images_placeholder = tf.get_default_graph().get_tensor_by_name('input:0')
+        self.embeddings = tf.get_default_graph().get_tensor_by_name('embeddings:0')
+        self.phase_train_placeholder = tf.get_default_graph().get_tensor_by_name('phase_train:0')
+        self.embedding_size = self.embeddings.get_shape()[1]
+        
+        rospy.wait_for_service('/camera/set_uvc_exposure')
+        try:
+            set_exposure = rospy.ServiceProxy('/camera/set_uvc_exposure', SetUVCExposure)
+            response = set_exposure(300)
+            print(response)
+        except rospy.ServiceException:
+            print('Service call failed')
         rospy.Subscriber('/camera/rgb/image_rect_color/compressed', CompressedImage, self.compressedCallback, queue_size=1)
+        rospy.on_shutdown(self.shutdownCb)
 
     def compressedCallback(self, image):
         encoded_data = np.fromstring(image.data, np.uint8)
@@ -138,17 +174,52 @@ class face_detection():
         preprocessed_image = preprocessed_image.astype(np.float32)
         confidences, boxes = self.ort_session.run(None, {self.input_name: preprocessed_image})
         boxes, labels, probs = predict(w, h, confidences, boxes, 0.7)
+        faces = []
+        boxes[boxes<0] = 0
         for i in range(boxes.shape[0]):
             box = boxes[i, :]
             x1, y1, x2, y2 = box
-            cv2.rectangle(decoded_image, (x1, y1), (x2, y2), (80,18,236), 2)
-            cv2.rectangle(decoded_image, (x1, y2 - 20), (x2, y2), (80,18,236), cv2.FILLED)
-            font = cv2.FONT_HERSHEY_DUPLEX
-            text = f"face: {labels[i]}"
-            cv2.putText(decoded_image, text, (x1 + 6, y2 - 6), font, 0.5, (255, 255, 255), 1)
+            gray = cv2.cvtColor(decoded_image, cv2.COLOR_RGB2GRAY)
+            aligned_face = self.fa.align(decoded_image, gray, dlib.rectangle(left = x1, top=y1, right=x2, bottom=y2))
+            aligned_face = cv2.resize(aligned_face, (112,112))
+
+            aligned_face = aligned_face - 127.5
+            aligned_face = aligned_face * 0.0078125
+
+            faces.append(aligned_face)
+        if len(faces) > 0:
+            predictions = []
+            faces = np.array(faces)
+            feed_dict = {self.images_placeholder: faces, self.phase_train_placeholder:False}
+            embeds = self.sess.run(self.embeddings, feed_dict=feed_dict)
+            # prediciton using distance
+            for embedding in embeds:
+                diff = np.subtract(self.saved_embeds, embedding)
+                dist = np.sum(np.square(diff), 1)
+                idx = np.argmin(dist)
+                if dist[idx] < self.threshold:
+                    predictions.append(self.names[idx])
+                else:
+                    predictions.append("unknown")
+
+            # draw
+            for i in range(boxes.shape[0]):
+                box = boxes[i, :]
+
+                text = f"{predictions[i]}"
+
+                x1, y1, x2, y2 = box
+                cv2.rectangle(decoded_image, (x1, y1), (x2, y2), (80,18,236), 2)
+                # Draw a label with a name below the face
+                cv2.rectangle(decoded_image, (x1, y2 - 20), (x2, y2), (80,18,236), cv2.FILLED)
+                font = cv2.FONT_HERSHEY_DUPLEX
+                cv2.putText(decoded_image, text, (x1 + 6, y2 - 6), font, 0.3, (255, 255, 255), 1)
         cv2.imshow('compressed', decoded_image)
         cv2.waitKey(1)
     
+    def shutdownCb(self):
+        self.sess.close()
+
     def start(self):
         rospy.spin()
 
