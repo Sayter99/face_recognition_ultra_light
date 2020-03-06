@@ -124,7 +124,7 @@ def predict(width, height, confidences, boxes, prob_threshold, iou_threshold=0.5
     return picked_box_probs[:, :4].astype(np.int32), np.array(picked_labels), picked_box_probs[:, 4]
 
 class face_detection():
-    def __init__(self):
+    def __init__(self, topic_name):
         rospy.init_node('face_detection', anonymous=True)
         pkg_path = rospkg.RosPack().get_path('face_recognition_ultra_light')
         self.onnx_path = pkg_path + '/onnx/ultra_light_640.onnx'
@@ -159,7 +159,7 @@ class face_detection():
             print(response)
         except rospy.ServiceException:
             print('Service call failed')
-        rospy.Subscriber('/camera/rgb/image_rect_color/compressed', CompressedImage, self.compressedCallback, queue_size=1)
+        rospy.Subscriber(topic_name, CompressedImage, self.compressedCallback, queue_size=1)
         rospy.on_shutdown(self.shutdownCb)
 
     def compressedCallback(self, image):
@@ -214,7 +214,7 @@ class face_detection():
                 cv2.rectangle(decoded_image, (x1, y2 - 20), (x2, y2), (80,18,236), cv2.FILLED)
                 font = cv2.FONT_HERSHEY_DUPLEX
                 cv2.putText(decoded_image, text, (x1 + 6, y2 - 6), font, 0.3, (255, 255, 255), 1)
-        cv2.imshow('compressed', decoded_image)
+        cv2.imshow('result', decoded_image)
         cv2.waitKey(1)
     
     def shutdownCb(self):
@@ -225,5 +225,5 @@ class face_detection():
         rospy.spin()
 
 if __name__ == '__main__':
-    face_detection = face_detection()
+    face_detection = face_detection('/camera/rgb/image_rect_color/compressed')
     face_detection.start()
