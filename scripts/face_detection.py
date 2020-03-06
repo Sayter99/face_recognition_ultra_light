@@ -126,7 +126,7 @@ def predict(width, height, confidences, boxes, prob_threshold, iou_threshold=0.5
 class face_detection():
     def __init__(self):
         rospy.init_node('face_detection', anonymous=True)
-        pkg_path = rospkg.RosPack().get_path('compressed_image_viewer')
+        pkg_path = rospkg.RosPack().get_path('face_recognition_ultra_light')
         self.onnx_path = pkg_path + '/onnx/ultra_light_640.onnx'
         self.onnx_model = onnx.load(self.onnx_path)
         # onnx.checker.check_model(self.onnx_model)

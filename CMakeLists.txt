@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(compressed_image_viewer)
+project(face_recognition_ultra_light)
 
 add_compile_options(-std=c++14)
 
@@ -54,7 +54,7 @@ find_package(OpenCV 4 REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES compressed_image_viewer
+#  LIBRARIES face_recognition_ultra_light
 #  CATKIN_DEPENDS cv_bridge image_transport roscpp rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
 )
@@ -73,7 +73,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/compressed_image_viewer.cpp
+#   src/${PROJECT_NAME}/face_recognition_ultra_light.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -93,7 +93,7 @@ target_link_libraries(compressed_image_viewer
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_compressed_image_viewer.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_face_recognition_ultra_light.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
