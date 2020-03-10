@@ -17,6 +17,7 @@ from onnx_tf.backend import prepare
 from imutils import face_utils
 from sensor_msgs.msg import CompressedImage
 from astra_camera.srv import SetUVCExposure
+from cv_bridge import CvBridge, CvBridgeError
 
 def area_of(left_top, right_bottom):
     """
@@ -159,7 +160,9 @@ class face_detection():
             print(response)
         except rospy.ServiceException:
             print('Service call failed')
-        rospy.Subscriber(topic_name, CompressedImage, self.compressedCallback, queue_size=1)
+        self.bridge = CvBridge()
+        self.face_pub = rospy.Publisher('/emotion/face', CompressedImage, queue_size=10)
+        rospy.Subscriber(topic_name, CompressedImage, self.compressedCallback, queue_size=3)
         rospy.on_shutdown(self.shutdownCb)
 
     def compressedCallback(self, image):
@@ -206,11 +209,18 @@ class face_detection():
             for i in range(boxes.shape[0]):
                 box = boxes[i, :]
 
-                text = f"{predictions[i]}"
+                text = predictions[i]
 
                 x1, y1, x2, y2 = box
-                cv2.rectangle(decoded_image, (x1, y1), (x2, y2), (80,18,236), 2)
+                crop_image = decoded_image[y1:y2, x1:x2]
+
+                msg = CompressedImage()
+                msg = self.bridge.cv2_to_compressed_imgmsg(crop_image)
+                msg.header.frame_id = text
+                self.face_pub.publish(msg)
+
                 # Draw a label with a name below the face
+                cv2.rectangle(decoded_image, (x1, y1), (x2, y2), (80,18,236), 2)
                 cv2.rectangle(decoded_image, (x1, y2 - 20), (x2, y2), (80,18,236), cv2.FILLED)
                 font = cv2.FONT_HERSHEY_DUPLEX
                 cv2.putText(decoded_image, text, (x1 + 6, y2 - 6), font, 0.3, (255, 255, 255), 1)

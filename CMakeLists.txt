@@ -10,18 +10,19 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
+  message_generation
 )
 
-find_package(OpenCV 4 REQUIRED)
+find_package(OpenCV REQUIRED)
 
 # catkin_python_setup()
 
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+# Generate messages in the 'msg' folder
+add_message_files(
+  FILES
+  EmotionInput.msg
+  EmotionOutput.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -37,11 +38,12 @@ find_package(OpenCV 4 REQUIRED)
 #   Action2.action
 # )
 
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   sensor_msgs#   std_msgs
-# )
+# Generate added messages and services with any dependencies listed here
+generate_messages(
+  DEPENDENCIES
+  sensor_msgs
+  std_msgs
+)
 
 ###################################
 ## catkin specific configuration ##
