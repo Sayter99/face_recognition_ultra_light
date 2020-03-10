@@ -24,7 +24,7 @@ class emotion_recognition():
         self.emotion_pub = rospy.Publisher('/emotion/output', EmotionOutput, queue_size=10)
         pkg_path = rospkg.RosPack().get_path('face_recognition_ultra_light')
         self.model = load_model(pkg_path + '/faces/models/emotion/epoch_90.hdf5')
-        rospy.Subscriber('/emotion/face', CompressedImage, self.callback)
+        rospy.Subscriber('/emotion/face', CompressedImage, self.callback, queue_size=5)
 
     def callback(self, data):
         global graph

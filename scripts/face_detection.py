@@ -161,8 +161,8 @@ class face_detection():
         except rospy.ServiceException:
             print('Service call failed')
         self.bridge = CvBridge()
-        self.face_pub = rospy.Publisher('/emotion/face', CompressedImage, queue_size=10)
-        rospy.Subscriber(topic_name, CompressedImage, self.compressedCallback, queue_size=3)
+        self.face_pub = rospy.Publisher('/emotion/face', CompressedImage, queue_size=5)
+        rospy.Subscriber(topic_name, CompressedImage, self.compressedCallback, queue_size=1)
         rospy.on_shutdown(self.shutdownCb)
 
     def compressedCallback(self, image):
