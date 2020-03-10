@@ -1,22 +1,33 @@
-from PIL import Image
+import sys
 from matplotlib import pyplot as plt
 import numpy as np
 import keras
+from keras.preprocessing.image import img_to_array
 from keras.models import load_model
 import cv2
 
-emotion_dict= {'Angry': 0, 'Sad': 5, 'Neutral': 4, 'Disgust': 1, 'Surprise': 6, 'Fear': 2, 'Happy': 3}
+EMOTIONS = ["angry", "scared", "happy", "sad", "surprised","neutral"]
 
-model = load_model('models/emotion/model_v6_23.hdf5')
-face_image  = cv2.imread('faces/tmp/CJ_65.jpg')
+model = load_model('models/emotion/epoch_90.hdf5')
+face_image = cv2.imread(sys.argv[1])
+face_image = cv2.cvtColor(face_image, cv2.COLOR_BGR2GRAY)
+face_image = cv2.resize(face_image, (48,48))
+face_image = face_image.astype('float') / 255.0
 cv2.imshow('test', face_image)
 cv2.waitKey(0)
-face_image = cv2.resize(face_image, (48,48))
-face_image = cv2.cvtColor(face_image, cv2.COLOR_BGR2GRAY)
-face_image = np.reshape(face_image, [1, face_image.shape[0], face_image.shape[1], 1])
-predicted_class = np.argmax(model.predict(face_image))
+face_image = img_to_array(face_image)
+face_image = np.expand_dims(face_image, axis=0)
+preds = model.predict(face_image)[0]
+label = EMOTIONS[preds.argmax()]
+print(label)
 
-label_map = dict((v,k) for k,v in emotion_dict.items()) 
-predicted_label = label_map[predicted_class]
-
-print(predicted_label)
+canvas = np.zeros((220, 300, 3), dtype="uint8")
+for (i, (emotion, prob)) in enumerate(zip(EMOTIONS, preds)):
+    # construct the label text
+    text = "{}: {:.2f}%".format(emotion, prob * 100)
+    # draw the label + probability bar on the canvas
+    w = int(prob * 300)
+    cv2.rectangle(canvas, (5, (i * 35) + 5),(w, (i * 35) + 35), (0, 0, 255), -1)
+    cv2.putText(canvas, text, (10, (i * 35) + 23),cv2.FONT_HERSHEY_SIMPLEX, 0.45,(255, 255, 255), 2)
+cv2.imshow("Probabilities", canvas)
+cv2.waitKey(0)
