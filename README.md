@@ -22,3 +22,7 @@ The light-weight ROS face recognition package based on Python3.
     ```bash
     rosrun face_recognition_ultra_light face_detection.py
     ```
+
+## Reference
+* https://towardsdatascience.com/real-time-face-recognition-with-cpu-983d35cc3ec5
+* https://mc.ai/emotion-recognition-using-keras/
