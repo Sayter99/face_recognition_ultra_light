@@ -29,21 +29,24 @@ class face_distance():
         self.depth_cy = depth_info.P[6]
 
     def compressedCb(self, data):
-        name = data.header.frame_id
-        x = float(name.split()[1])
-        y = float(name.split()[2])
-        if self.depth is not None:
+        name = data.header.frame_id.split()
+        x = float(name[1])
+        y = float(name[2])
+        if self.depth is not None and name[0] != 'unknown':
             diff_x = (x - self.uvc_cx)
             diff_y = (y - self.uvc_cy)
-            index_y = max(0, min(int(self.depth_cy + diff_y), 400))
-            index_x = max(0, min(int(self.depth_cx + diff_x), 640))
-            dist = self.depth[index_y, index_x] * 0.001
+            # index_y = max(0, min(int(x), 400 - 1))
+            # index_x = max(0, min(int(y) + 40, 640 - 1))
+            index_y = max(5, min(int(self.depth_cy + diff_y), 400 - 6))
+            index_x = max(5, min(int(self.depth_cx + diff_x), 640 - 6))
+            window = self.depth[index_y - 5 : index_y + 5, index_x - 5 : index_x + 5]
+            dist = np.median(window) * 0.001
             real_x = -diff_x * dist / self.depth_fx
             real_y = -diff_y * dist / self.depth_fy
             self.br.sendTransform((dist, real_x, real_y),
                                   tf.transformations.quaternion_from_euler(0, 0, 0),
                                   rospy.Time.now(),
-                                  'face',
+                                  name[0],
                                   'camera_link')
 
     def depthCb(self, img):
