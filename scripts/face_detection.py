@@ -216,7 +216,9 @@ class face_detection():
 
                 msg = CompressedImage()
                 msg = self.bridge.cv2_to_compressed_imgmsg(crop_image)
-                msg.header.frame_id = text
+                face_pos_x = (x1 + x2)/2.0
+                face_pos_y = (y1 + y2)/2.0
+                msg.header.frame_id = text + ' ' + str(face_pos_x) + ' ' + str(face_pos_y)
                 self.face_pub.publish(msg)
 
                 # Draw a label with a name below the face
