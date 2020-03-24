@@ -143,14 +143,14 @@ class face_detection():
         with open(pkg_path + "/faces/embeddings/embeddings.pkl", "rb") as f:
             (self.saved_embeds, self.names) = pickle.load(f)
 
-        tf.reset_default_graph()
-        self.sess = tf.Session()
-        self.saver = tf.train.import_meta_graph(pkg_path + '/faces/models/mfn/m1/mfn.ckpt.meta')
+        tf.compat.v1.reset_default_graph()
+        self.sess = tf.compat.v1.Session()
+        self.saver = tf.compat.v1.train.import_meta_graph(pkg_path + '/faces/models/mfn/m1/mfn.ckpt.meta')
         self.saver.restore(self.sess, pkg_path + '/faces/models/mfn/m1/mfn.ckpt')
 
-        self.images_placeholder = tf.get_default_graph().get_tensor_by_name('input:0')
-        self.embeddings = tf.get_default_graph().get_tensor_by_name('embeddings:0')
-        self.phase_train_placeholder = tf.get_default_graph().get_tensor_by_name('phase_train:0')
+        self.images_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('input:0')
+        self.embeddings = tf.compat.v1.get_default_graph().get_tensor_by_name('embeddings:0')
+        self.phase_train_placeholder = tf.compat.v1.get_default_graph().get_tensor_by_name('phase_train:0')
         self.embedding_size = self.embeddings.get_shape()[1]
         
         rospy.wait_for_service('/camera/set_uvc_exposure')
