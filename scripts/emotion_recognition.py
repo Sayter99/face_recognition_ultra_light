@@ -16,6 +16,10 @@ graph = tf.compat.v1.get_default_graph()
 sess = tf.compat.v1.Session()
 set_session(sess)
 
+# make a queue to hold the last x emotions to smooth out how people are feeing
+queue = []
+num_samples = 20
+
 class emotion_recognition():
 
     def __init__(self):
@@ -29,6 +33,7 @@ class emotion_recognition():
     def callback(self, data):
         global graph
         global sess
+        global queue
         with graph.as_default():
             set_session(sess)
             encoded_data = np.fromstring(data.data, np.uint8)
@@ -39,7 +44,15 @@ class emotion_recognition():
             face_image = img_to_array(face_image)
             face_image = np.expand_dims(face_image, axis=0)
             preds = self.model.predict(face_image)[0]
-            label = self.EMOTIONS[preds.argmax()]
+            #label = self.EMOTIONS[preds.argmax()]
+
+            # Filter to get the most likely emotion from the mode in past values
+            queue.append(preds.argmax())
+            if len(queue) > num_samples:
+                queue.pop(0)
+            max_idx =  max(set(queue), key=queue.count)
+            label = self.EMOTIONS[max_idx]
+
             msg = EmotionOutput()
             msg.name = data.header.frame_id
             msg.emotion = label
