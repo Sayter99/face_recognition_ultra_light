@@ -12,8 +12,8 @@ from sensor_msgs.msg import CompressedImage
 import tensorflow as tf
 from tensorflow.python.keras.backend import set_session
 
-graph = tf.get_default_graph()
-sess = tf.Session()
+graph = tf.compat.v1.get_default_graph()
+sess = tf.compat.v1.Session()
 set_session(sess)
 
 class emotion_recognition():
