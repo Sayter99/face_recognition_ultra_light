@@ -26,6 +26,8 @@ class emotion_recognition():
         self.emotion_pub = rospy.Publisher('/emotion/output', EmotionOutput, queue_size=10)
         self.emotion_pub_json = rospy.Publisher('/emotion/output_json', String, queue_size=10)
         self.emotion_pub_total_json = rospy.Publisher('/emotion/output_total_json', String, queue_size=10)
+        self.emotion_pub_average_json = rospy.Publisher('/emotion/output_average_json', String, queue_size=10)
+
 
 
         pkg_path = rospkg.RosPack().get_path('face_recognition_ultra_light')
@@ -46,6 +48,21 @@ class emotion_recognition():
             emotion_idx = self.publish_emotions(data)
             self.publish_emotions_json()
             self.publish_emotions_total_json(emotion_idx)
+            self.publish_emotions_average_json()
+        
+    def publish_emotions_average_json(self):
+        samples = sum(self.emotion_totals)
+        vals = {
+            self.EMOTIONS[0]: str(self.emotion_totals[0]/samples),
+            self.EMOTIONS[1]: str(self.emotion_totals[1]/samples),
+            self.EMOTIONS[2]: str(self.emotion_totals[2]/samples),
+            self.EMOTIONS[3]: str(self.emotion_totals[3]/samples),
+            self.EMOTIONS[4]: str(self.emotion_totals[4]/samples),
+            self.EMOTIONS[5]: str(self.emotion_totals[5]/samples)
+        }
+        vals_json = json.dumps(vals) 
+        self.emotion_pub_average_json.publish(vals_json)
+
 
 
     def publish_emotions_total_json(self, emotion_idx):
