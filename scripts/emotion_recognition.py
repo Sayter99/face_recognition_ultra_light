@@ -36,6 +36,7 @@ class emotion_recognition():
         self.queue = []
         self.num_samples = 20
         self.emotion_totals = [0, 0, 0, 0, 0, 0]
+        self.emotion_percentages = [0, 0, 0, 0, 0, 0]
 
 
     def callback(self, data):
@@ -51,14 +52,20 @@ class emotion_recognition():
             self.publish_emotions_average_json()
         
     def publish_emotions_average_json(self):
+        
         samples = sum(self.emotion_totals)
+        # This is a Exponential Moving Average that gives more weight to new samples
+        for idx, val in enumerate(self.emotion_percentages):
+            self.emotion_percentages[idx] -= val/samples
+            self.emotion_percentages[idx] += self.preds[idx]/samples
+
         vals = {
-            self.EMOTIONS[0]: str(self.emotion_totals[0]/samples),
-            self.EMOTIONS[1]: str(self.emotion_totals[1]/samples),
-            self.EMOTIONS[2]: str(self.emotion_totals[2]/samples),
-            self.EMOTIONS[3]: str(self.emotion_totals[3]/samples),
-            self.EMOTIONS[4]: str(self.emotion_totals[4]/samples),
-            self.EMOTIONS[5]: str(self.emotion_totals[5]/samples)
+            self.EMOTIONS[0]: str(self.emotion_percentages[0]),
+            self.EMOTIONS[1]: str(self.emotion_percentages[1]),
+            self.EMOTIONS[2]: str(self.emotion_percentages[2]),
+            self.EMOTIONS[3]: str(self.emotion_percentages[3]),
+            self.EMOTIONS[4]: str(self.emotion_percentages[4]),
+            self.EMOTIONS[5]: str(self.emotion_percentages[5])
         }
         vals_json = json.dumps(vals) 
         self.emotion_pub_average_json.publish(vals_json)
