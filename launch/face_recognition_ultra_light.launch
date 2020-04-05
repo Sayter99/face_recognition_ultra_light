@@ -111,4 +111,6 @@
   <!-- Face Nodes-->
   <node pkg="face_recognition_ultra_light" type="face_detection.py" name="face_detection" output="screen" />
   <node pkg="face_recognition_ultra_light" type="emotion_recognition.py" name="emotion_recognition" output="screen" />
+  <!-- we don't need face distance yet-->
+  <!-- <node pkg="face_recognition_ultra_light" type="face_distance.py" name="face_distance" output="screen" /> -->
 </launch>
