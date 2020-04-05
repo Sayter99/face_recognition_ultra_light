@@ -105,6 +105,7 @@ class emotion_recognition():
         label = self.EMOTIONS[max_idx]
 
         msg = EmotionOutput()
+        msg.time = rospy.Time.now()
         msg.name = data.header.frame_id
         msg.emotion = label
         self.emotion_pub.publish(msg)
