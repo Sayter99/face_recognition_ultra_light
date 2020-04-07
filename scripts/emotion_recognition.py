@@ -10,13 +10,27 @@ import rospy
 from face_recognition_ultra_light.msg import EmotionOutput
 from sensor_msgs.msg import CompressedImage
 import tensorflow as tf
+#import tensorflow.compat.v1 as tf
+#tf.disable_v2_behavior() 
+
 import json 
 from std_msgs.msg import String
 from tensorflow.python.keras.backend import set_session
+import paho.mqtt.client as mqtt
+from datetime import datetime 
+
+
 
 graph = tf.compat.v1.get_default_graph()
 sess = tf.compat.v1.Session()
 set_session(sess)
+
+def on_connect(client, userdata, flags, rc):
+        print("CONNACK received with code %d." % (rc))
+def on_publish(client, userdata, mid):
+    pass
+    #print('published data for mqtt')
+
 
 class emotion_recognition():
 
@@ -29,19 +43,24 @@ class emotion_recognition():
         self.emotion_pub_average_json = rospy.Publisher('/emotion/output_average_json', String, queue_size=10)
 
 
-
         pkg_path = rospkg.RosPack().get_path('face_recognition_ultra_light')
         self.model = load_model(pkg_path + '/faces/models/emotion/epoch_90.hdf5')
         rospy.Subscriber('/emotion/face', CompressedImage, self.callback, queue_size=5)
+
+
         self.queue = []
         self.num_samples = 20
         self.emotion_totals = [0, 0, 0, 0, 0, 0]
         self.emotion_percentages = [0, 0, 0, 0, 0, 0]
+        self.person_name = "unknown"
+
+        self.create_mqtt_client()
 
 
     def callback(self, data):
         global graph
         global sess
+        
         with graph.as_default():
             set_session(sess)
             encoded_data = np.fromstring(data.data, np.uint8)
@@ -49,17 +68,32 @@ class emotion_recognition():
             emotion_idx = self.publish_emotions(data)
             self.publish_emotions_json()
             self.publish_emotions_total_json(emotion_idx)
-            self.publish_emotions_average_json()
-        
-    def publish_emotions_average_json(self):
+            self.person_name = data.header.frame_id.split()[0]
+            self.publish_emotions_average_mqtt()
+
+
+    def create_mqtt_client(self):
+        broker = "broker.hivemq.com"
+        self.client = mqtt.Client('batbot_pub')
+        self.client.on_connect = on_connect
+        self.client.on_publish = on_publish
+        self.client.connect(broker)
+        self.client.loop_start()
+
+    
+
+    def publish_emotions_average_mqtt(self):
         
         samples = sum(self.emotion_totals)
+        time = datetime.now()
         # This is a Exponential Moving Average that gives more weight to new samples
         for idx, val in enumerate(self.emotion_percentages):
             self.emotion_percentages[idx] -= val/samples
             self.emotion_percentages[idx] += self.preds[idx]/samples
 
         vals = {
+            'time': str(time),
+            'name': str(self.person_name),
             self.EMOTIONS[0]: str(self.emotion_percentages[0]),
             self.EMOTIONS[1]: str(self.emotion_percentages[1]),
             self.EMOTIONS[2]: str(self.emotion_percentages[2]),
@@ -68,7 +102,8 @@ class emotion_recognition():
             self.EMOTIONS[5]: str(self.emotion_percentages[5])
         }
         vals_json = json.dumps(vals) 
-        self.emotion_pub_average_json.publish(vals_json)
+        #self.emotion_pub_average_json.publish(vals_json)
+        self.client.publish('face/emotion', vals_json)
 
 
 
@@ -105,7 +140,7 @@ class emotion_recognition():
         label = self.EMOTIONS[max_idx]
 
         msg = EmotionOutput()
-        msg.time = rospy.Time.now()
+        #msg.time = rospy.Time.now()
         msg.name = data.header.frame_id
         msg.emotion = label
         self.emotion_pub.publish(msg)
