@@ -26,6 +26,9 @@ The light-weight ROS face recognition package based on Python3.
 ## RQt Graph
 ![](media/rosgraph.png)
 
+## Result
+![](media/demo.gif)
+
 ## Reference
 * https://towardsdatascience.com/real-time-face-recognition-with-cpu-983d35cc3ec5
 * https://mc.ai/emotion-recognition-using-keras/
