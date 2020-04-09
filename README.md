@@ -8,7 +8,13 @@ The light-weight ROS face recognition package based on Python3.
 * Install python packages, you might need to upgrade your pip version at first
     * `pip3 install -r requirements.txt`
 
-## Usage
+
+## Emotion Detection over mqtt
+* In order to run the camra node you must have ros_astera_camera installed in your ros workspace: https://github.com/orbbec/ros_astra_camera
+* run `roslaunch face_recognition_ultra_light face_recognition_ultra_light.launch`
+* From any computer run `python3 mqtt_emotion_subscriber.py` located in `face_recognition_ultra_light/scripts`
+
+## Face Training
 
 * To add training data, you can use `faces/recorder.py`
     ```bash

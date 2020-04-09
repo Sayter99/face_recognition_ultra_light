@@ -23,8 +23,8 @@ def on_connect(client, userdata, flags, rc):
 
 client_name = "batbot"
 broker = "broker.hivemq.com"
-
 client = mqtt.Client(client_name)
+
 
 # Add all methods defined at the start of the file to the client
 client.on_subscribe = on_subscribe
@@ -33,6 +33,5 @@ client.on_connect = on_connect
 
 client.connect(broker)
 client.subscribe("face/emotion", qos=1)
-
 
 client.loop_forever()

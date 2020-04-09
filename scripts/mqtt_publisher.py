@@ -8,6 +8,8 @@ def on_connect(client, userdata, flags, rc):
 def on_publish(client, userdata, mid):
     print("mid: " + str(mid))
 
+
+# TODO: In a tutorial I watch, they mentioned that each client needs a unique name.
 client = paho.Client()
 client.on_connect = on_connect
 client.on_publish = on_publish

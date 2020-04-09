@@ -10,8 +10,6 @@ import rospy
 from face_recognition_ultra_light.msg import EmotionOutput
 from sensor_msgs.msg import CompressedImage
 import tensorflow as tf
-#import tensorflow.compat.v1 as tf
-#tf.disable_v2_behavior() 
 
 import json 
 from std_msgs.msg import String
@@ -20,40 +18,27 @@ import paho.mqtt.client as mqtt
 from datetime import datetime 
 
 
-
 graph = tf.compat.v1.get_default_graph()
 sess = tf.compat.v1.Session()
 set_session(sess)
 
 def on_connect(client, userdata, flags, rc):
         print("CONNACK received with code %d." % (rc))
-def on_publish(client, userdata, mid):
-    pass
-    #print('published data for mqtt')
-
 
 class emotion_recognition():
-
     def __init__(self):
         rospy.init_node('emotion_recognition', anonymous=True)
         self.EMOTIONS = ["angry", "scared", "happy", "sad", "surprised","neutral"]
         self.emotion_pub = rospy.Publisher('/emotion/output', EmotionOutput, queue_size=10)
-        self.emotion_pub_json = rospy.Publisher('/emotion/output_json', String, queue_size=10)
-        self.emotion_pub_total_json = rospy.Publisher('/emotion/output_total_json', String, queue_size=10)
-        self.emotion_pub_average_json = rospy.Publisher('/emotion/output_average_json', String, queue_size=10)
-
-
         pkg_path = rospkg.RosPack().get_path('face_recognition_ultra_light')
         self.model = load_model(pkg_path + '/faces/models/emotion/epoch_90.hdf5')
         rospy.Subscriber('/emotion/face', CompressedImage, self.callback, queue_size=5)
-
 
         self.queue = []
         self.num_samples = 20
         self.emotion_totals = [0, 0, 0, 0, 0, 0]
         self.emotion_percentages = [0, 0, 0, 0, 0, 0]
         self.person_name = "unknown"
-
         self.create_mqtt_client()
 
 
@@ -62,63 +47,50 @@ class emotion_recognition():
         global sess
         
         with graph.as_default():
+            # Process face for emotion
             set_session(sess)
             encoded_data = np.fromstring(data.data, np.uint8)
             self.process_face_image(encoded_data)
             emotion_idx = self.publish_emotions(data)
-            self.publish_emotions_json()
-            self.publish_emotions_total_json(emotion_idx)
+
+            # Publish emotion data
             self.person_name = data.header.frame_id.split()[0]
-            self.publish_emotions_average_mqtt()
+            self.publish_emotions_average_mqtt(emotion_idx)
 
 
     def create_mqtt_client(self):
         broker = "broker.hivemq.com"
         self.client = mqtt.Client('batbot_pub')
         self.client.on_connect = on_connect
-        self.client.on_publish = on_publish
         self.client.connect(broker)
         self.client.loop_start()
 
-    
 
-    def publish_emotions_average_mqtt(self):
-        
-        samples = sum(self.emotion_totals)
-        time = datetime.now()
-        # This is a Exponential Moving Average that gives more weight to new samples
-        for idx, val in enumerate(self.emotion_percentages):
-            self.emotion_percentages[idx] -= val/samples
-            self.emotion_percentages[idx] += self.preds[idx]/samples
+    def publish_emotions_average_mqtt(self, emotion_idx):
+        if self.person_name == 'unknown':
+            pass
+        else:
+            self.emotion_totals[emotion_idx] = self.emotion_totals[emotion_idx] + 1
+            samples = sum(self.emotion_totals)
+            time = datetime.now()
+            # This is a Exponential Moving Average that gives more weight to new samples
+            for idx, val in enumerate(self.emotion_percentages):
+                self.emotion_percentages[idx] -= val/samples
+                self.emotion_percentages[idx] += self.preds[idx]/samples
 
-        vals = {
-            'time': str(time),
-            'name': str(self.person_name),
-            self.EMOTIONS[0]: str(self.emotion_percentages[0]),
-            self.EMOTIONS[1]: str(self.emotion_percentages[1]),
-            self.EMOTIONS[2]: str(self.emotion_percentages[2]),
-            self.EMOTIONS[3]: str(self.emotion_percentages[3]),
-            self.EMOTIONS[4]: str(self.emotion_percentages[4]),
-            self.EMOTIONS[5]: str(self.emotion_percentages[5])
-        }
-        vals_json = json.dumps(vals) 
-        #self.emotion_pub_average_json.publish(vals_json)
-        self.client.publish('face/emotion', vals_json)
+            vals = {
+                'time': str(time),
+                'name': str(self.person_name),
+                self.EMOTIONS[0]: str(self.emotion_percentages[0]),
+                self.EMOTIONS[1]: str(self.emotion_percentages[1]),
+                self.EMOTIONS[2]: str(self.emotion_percentages[2]),
+                self.EMOTIONS[3]: str(self.emotion_percentages[3]),
+                self.EMOTIONS[4]: str(self.emotion_percentages[4]),
+                self.EMOTIONS[5]: str(self.emotion_percentages[5])
+            }
+            vals_json = json.dumps(vals) 
+            self.client.publish('face/emotion', vals_json)
 
-
-
-    def publish_emotions_total_json(self, emotion_idx):
-        self.emotion_totals[emotion_idx] = self.emotion_totals[emotion_idx] + 1
-        vals = {
-            self.EMOTIONS[0]: str(self.emotion_totals[0]),
-            self.EMOTIONS[1]: str(self.emotion_totals[1]),
-            self.EMOTIONS[2]: str(self.emotion_totals[2]),
-            self.EMOTIONS[3]: str(self.emotion_totals[3]),
-            self.EMOTIONS[4]: str(self.emotion_totals[4]),
-            self.EMOTIONS[5]: str(self.emotion_totals[5])
-        }
-        vals_json = json.dumps(vals) 
-        self.emotion_pub_total_json.publish(vals_json)
 
     def process_face_image(self, encoded_data): 
         face_image = cv2.imdecode(encoded_data, cv2.IMREAD_UNCHANGED)
@@ -140,25 +112,10 @@ class emotion_recognition():
         label = self.EMOTIONS[max_idx]
 
         msg = EmotionOutput()
-        #msg.time = rospy.Time.now()
         msg.name = data.header.frame_id
         msg.emotion = label
         self.emotion_pub.publish(msg)
         return max_idx
-
-
-    def publish_emotions_json(self):
-        # Package data as json string and publish
-        vals = {
-            self.EMOTIONS[0]: str(self.preds[0]),
-            self.EMOTIONS[1]: str(self.preds[1]),
-            self.EMOTIONS[2]: str(self.preds[2]),
-            self.EMOTIONS[3]: str(self.preds[3]),
-            self.EMOTIONS[4]: str(self.preds[4]),
-            self.EMOTIONS[5]: str(self.preds[5])
-        }
-        vals_json = json.dumps(vals) 
-        self.emotion_pub_json.publish(vals_json)
 
         
     def start(self):
