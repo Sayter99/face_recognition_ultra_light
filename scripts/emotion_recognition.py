@@ -16,6 +16,8 @@ from std_msgs.msg import String
 from tensorflow.python.keras.backend import set_session
 import paho.mqtt.client as mqtt
 from datetime import datetime 
+import os
+import urllib.parse as urlparse
 
 
 graph = tf.compat.v1.get_default_graph()
@@ -59,10 +61,13 @@ class emotion_recognition():
 
 
     def create_mqtt_client(self):
-        broker = "broker.hivemq.com"
-        self.client = mqtt.Client('batbot_pub')
+        url_str = os.environ.get('CLOUDMQTT_URL')
+        url = urlparse.urlparse(url_str)
+
+        self.client = mqtt.Client('batbot_1')
         self.client.on_connect = on_connect
-        self.client.connect(broker)
+        self.client.username_pw_set(url.username, url.password)
+        self.client.connect(url.hostname, url.port)
         self.client.loop_start()
 
 
@@ -89,7 +94,7 @@ class emotion_recognition():
                 self.EMOTIONS[5]: str(self.emotion_percentages[5])
             }
             vals_json = json.dumps(vals) 
-            self.client.publish('face/emotion', vals_json)
+            self.client.publish('austin/eye/emotion', vals_json)
 
 
     def process_face_image(self, encoded_data): 
