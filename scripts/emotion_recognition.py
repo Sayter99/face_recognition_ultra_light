@@ -37,7 +37,7 @@ class emotion_recognition():
         rospy.Subscriber('/emotion/face', CompressedImage, self.callback, queue_size=5)
 
         self.queue = []
-        self.num_samples = 20
+        self.num_samples = 5
         self.emotion_totals = [0, 0, 0, 0, 0, 0]
         self.emotion_percentages = [0, 0, 0, 0, 0, 0]
         self.person_name = "unknown"
@@ -57,6 +57,7 @@ class emotion_recognition():
 
             # Publish emotion data
             self.person_name = data.header.frame_id.split()[0]
+            # for publishing <name emotion> pair, use publish_emotion_mqtt
             self.publish_emotions_average_mqtt(emotion_idx)
 
 
@@ -95,6 +96,23 @@ class emotion_recognition():
             }
             vals_json = json.dumps(vals) 
             self.client.publish('austin/eye/emotion', vals_json)
+
+    
+    def publish_emotion_mqtt(self, emotion_idx):
+        if self.person_name == 'unknown':
+            pass
+        else:
+            self.emotion_totals[emotion_idx] = self.emotion_totals[emotion_idx] + 1
+            samples = sum(self.emotion_totals)
+            time = datetime.now()
+            # This is a Exponential Moving Average that gives more weight to new samples
+            for idx, val in enumerate(self.emotion_percentages):
+                self.emotion_percentages[idx] -= val/samples
+                self.emotion_percentages[idx] += self.preds[idx]/samples
+
+            vals = str(self.person_name) + ' ' + str(self.EMOTIONS[np.argmax(self.emotion_percentages)])
+            print(vals)
+            self.client.publish('austin/eye/emotion', vals)
 
 
     def process_face_image(self, encoded_data): 
