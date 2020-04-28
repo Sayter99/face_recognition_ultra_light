@@ -103,6 +103,16 @@ class emotion_recognition():
         if self.person_name == 'unknown':
             pass
         else:
+            canvas = np.zeros((220, 300, 3), dtype="uint8")
+            for (i, (emotion, prob)) in enumerate(zip(self.EMOTIONS, self.preds)):
+                # construct the label text
+                text = "{}: {:.2f}%".format(emotion, prob * 100)
+                # draw the label + probability bar on the canvas
+                w = int(prob * 300)
+                cv2.rectangle(canvas, (5, (i * 35) + 5),(w, (i * 35) + 35), (0, 0, 255), -1)
+                cv2.putText(canvas, text, (10, (i * 35) + 23),cv2.FONT_HERSHEY_SIMPLEX, 0.45,(255, 255, 255), 2)
+            cv2.imshow("Probabilities", canvas)
+            cv2.waitKey(1)
             self.queue.append(self.preds.argmax())
             if len(self.queue) > self.num_samples:
                 self.queue.pop(0)
