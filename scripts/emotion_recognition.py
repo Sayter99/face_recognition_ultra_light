@@ -103,15 +103,14 @@ class emotion_recognition():
         if self.person_name == 'unknown':
             pass
         else:
-            self.emotion_totals[emotion_idx] = self.emotion_totals[emotion_idx] + 1
-            samples = sum(self.emotion_totals)
-            time = datetime.now()
-            # This is a Exponential Moving Average that gives more weight to new samples
-            for idx, val in enumerate(self.emotion_percentages):
-                self.emotion_percentages[idx] -= val/samples
-                self.emotion_percentages[idx] += self.preds[idx]/samples
+            self.queue.append(self.preds.argmax())
+            if len(self.queue) > self.num_samples:
+                self.queue.pop(0)
+            max_idx =  max(set(self.queue), key=self.queue.count)
+            label = self.EMOTIONS[max_idx]
 
-            vals = str(self.person_name) + ' ' + str(self.EMOTIONS[np.argmax(self.emotion_percentages)])
+            vals = str(self.person_name) + ' ' + str(label)
+            print(vals)
             self.client.publish('austin/eye/emotion', vals)
 
 
