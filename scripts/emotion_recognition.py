@@ -57,8 +57,9 @@ class emotion_recognition():
 
             # Publish emotion data
             self.person_name = data.header.frame_id.split()[0]
-            # for publishing <name emotion> pair, use publish_emotion_mqtt
-            self.publish_emotions_average_mqtt(emotion_idx)
+            # to publish <name emotion> pair, use publish_emotion_mqtt
+            # to publish json data, use publish_emotions_average_mqtt
+            self.publish_emotion_mqtt(emotion_idx)
 
 
     def create_mqtt_client(self):
@@ -111,7 +112,6 @@ class emotion_recognition():
                 self.emotion_percentages[idx] += self.preds[idx]/samples
 
             vals = str(self.person_name) + ' ' + str(self.EMOTIONS[np.argmax(self.emotion_percentages)])
-            print(vals)
             self.client.publish('austin/eye/emotion', vals)
 
 
