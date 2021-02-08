@@ -40,7 +40,7 @@ genpy==0.6.9
 google-pasta==0.1.8
 grpcio==1.27.2
 h5py==2.10.0
-httplib2==0.9.2
+httplib2==0.19.0
 idna==2.6
 image-geometry==1.13.0
 imutils==0.5.3
