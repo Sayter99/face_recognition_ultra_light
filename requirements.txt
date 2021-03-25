@@ -93,7 +93,7 @@ python-dateutil==2.6.1
 python-debian==0.1.32
 python-qt-binding==0.4.0
 pytz==2019.3
-PyYAML==5.3
+PyYAML==5.4
 qt-dotgraph==0.4.0
 qt-gui==0.4.0
 qt-gui-cpp==0.4.0
