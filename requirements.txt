@@ -98,7 +98,7 @@ qt-dotgraph==0.4.0
 qt-gui==0.4.0
 qt-gui-cpp==0.4.0
 qt-gui-py-common==0.4.0
-reportlab==3.4.0
+reportlab==3.5.55
 requests-unixsocket==0.1.5
 resource-retriever==1.12.6
 rosbag==1.14.3
