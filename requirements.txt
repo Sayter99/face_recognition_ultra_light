@@ -79,7 +79,7 @@ opencv-python==4.2.0.32
 paho-mqtt==1.5.0
 pexpect==4.2.1
 Pillow==6.2.0
-protobuf==3.11.3
+protobuf==3.18.3
 pycairo==1.16.2
 pycups==1.9.73
 pygobject==3.26.1
